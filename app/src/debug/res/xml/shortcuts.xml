@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="manage_servers"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_server"
+        android:shortcutShortLabel="@string/shortcut_servers_short"
+        android:shortcutLongLabel="@string/shortcut_servers_long">
+        <intent
+            android:action="io.github.noir017.fleetherd.ACTION_MANAGE_SERVERS"
+            android:targetPackage="io.github.noir017.fleetherd.debug"
+            android:targetClass="io.github.noir017.fleetherd.MainActivity" />
+    </shortcut>
+</shortcuts>

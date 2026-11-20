@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="fh_bg">#131313</color>
+    <color name="fh_panel">#171717</color>
+    <color name="fh_field">#1A1A1A</color>
+    <color name="fh_line">#272727</color>
+    <color name="fh_fg">#DCDCDC</color>
+    <color name="fh_dim">#7D7D7D</color>
+    <color name="fh_accent">#5F8EC4</color>
+    <color name="fh_icon_bg">#1C222B</color>
+    <color name="fh_error">#F87171</color>
+</resources>
