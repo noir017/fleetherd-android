@@ -15,6 +15,10 @@ class OriginGuardTest {
             OriginGuard.normalizeServerUrl("  https://fleetherd.example.com/ ")
         )
         assertEquals(
+            "https://fleetherd.example.com",
+            OriginGuard.normalizeServerUrl("fleetherd.example.com")
+        )
+        assertEquals(
             "https://fleetherd.example.com/sub",
             OriginGuard.normalizeServerUrl("https://fleetherd.example.com/sub/")
         )
@@ -24,26 +28,59 @@ class OriginGuardTest {
     }
 
     @Test
-    fun checksSameOriginStrictly() {
+    fun checksSameOriginAndHttpUpgrade() {
         val server = "https://fleetherd.example.com/chat"
         assertTrue(OriginGuard.isSameOrigin("https://fleetherd.example.com/api/events", server))
         assertTrue(OriginGuard.isSameOrigin("https://fleetherd.example.com:443/", server))
         assertFalse(OriginGuard.isSameOrigin("http://fleetherd.example.com/", server))
         assertFalse(OriginGuard.isSameOrigin("https://evil.example.com/", server))
+
+        // http server upgraded to https on the same host
+        assertTrue(OriginGuard.isSameOrigin("https://fleetherd.example.com/", "http://fleetherd.example.com"))
     }
 
     @Test
-    fun routesSameOriginAndSsoInAppAndExternalOut() {
+    fun keepsRedirectsAndAutoNavigationsInApp() {
         val server = "https://fleetherd.example.com"
-        assertTrue(OriginGuard.shouldStayInApp("https://fleetherd.example.com/?t=abc", server))
-        assertTrue(OriginGuard.shouldStayInApp("https://team.cloudflareaccess.com/cdn-cgi/access/login", server))
-        assertTrue(
-            OriginGuard.shouldStayInApp(
-                "https://sso.corp.example.org/auth",
-                server,
-                customSsoHosts = listOf("*.corp.example.org")
+        // Server redirect during SSO callback must never kick out to external browser
+        assertFalse(
+            OriginGuard.shouldOpenExternally(
+                candidateUrl = "https://idp.example.net/callback",
+                serverUrl = server,
+                customSsoHosts = emptyList(),
+                isRedirect = true,
+                hasGesture = true
             )
         )
-        assertFalse(OriginGuard.shouldStayInApp("https://github.com/noir017/fleetherd", server))
+        // Non-gesture automatic JS redirect stays in app
+        assertFalse(
+            OriginGuard.shouldOpenExternally(
+                candidateUrl = "https://idp.example.net/done",
+                serverUrl = server,
+                customSsoHosts = emptyList(),
+                isRedirect = false,
+                hasGesture = false
+            )
+        )
+        // Explicit user tap on external link opens externally
+        assertTrue(
+            OriginGuard.shouldOpenExternally(
+                candidateUrl = "https://docs.example.org/guide",
+                serverUrl = server,
+                customSsoHosts = emptyList(),
+                isRedirect = false,
+                hasGesture = true
+            )
+        )
+        // Explicit user tap on CF Access / GitHub SSO stays in app
+        assertFalse(
+            OriginGuard.shouldOpenExternally(
+                candidateUrl = "https://team.cloudflareaccess.com/cdn-cgi/access/login",
+                serverUrl = server,
+                customSsoHosts = emptyList(),
+                isRedirect = false,
+                hasGesture = true
+            )
+        )
     }
 }

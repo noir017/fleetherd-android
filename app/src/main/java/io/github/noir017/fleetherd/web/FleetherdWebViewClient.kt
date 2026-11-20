@@ -30,12 +30,19 @@ class FleetherdWebViewClient(
         val uri = request?.url ?: return false
         val url = uri.toString()
 
-        if (OriginGuard.shouldStayInApp(url, activeServerUrlProvider(), ssoHostsProvider())) {
-            return false
+        if (OriginGuard.shouldOpenExternally(
+                candidateUrl = url,
+                serverUrl = activeServerUrlProvider(),
+                customSsoHosts = ssoHostsProvider(),
+                isRedirect = request.isRedirect,
+                hasGesture = request.hasGesture()
+            )
+        ) {
+            openExternally(uri)
+            return true
         }
 
-        openExternally(uri)
-        return true
+        return false
     }
 
     override fun onPageFinished(view: WebView?, url: String?) {
