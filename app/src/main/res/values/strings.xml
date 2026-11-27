@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">fleetherd</string>
+    <string name="app_name" translatable="false">fleetherd</string>
     <string name="shortcut_servers_short">Servers</string>
     <string name="shortcut_servers_long">Manage Servers</string>
     <string name="error_title">Unable to reach server</string>
@@ -9,7 +9,7 @@
     <string name="back_press_again_to_exit">Press back again to exit</string>
     <string name="server_dialog_title">Servers</string>
     <string name="server_name_hint">Name (e.g. Home)</string>
-    <string name="server_url_hint">https://fleetherd.example.com</string>
+    <string name="server_url_hint" translatable="false">https://fleetherd.example.com</string>
     <string name="server_sso_hint">Allowed SSO hosts (optional, comma-separated)</string>
     <string name="server_save_connect">Save &amp; Connect</string>
     <string name="server_cancel">Cancel</string>
@@ -18,4 +18,9 @@
     <string name="download_started">Downloading %1$s</string>
     <string name="download_failed">Download failed</string>
     <string name="mic_permission_denied">Microphone permission is required for voice recording</string>
+    <string name="link_open_in_browser">Open in browser</string>
+    <string name="link_copy">Copy link</string>
+    <string name="link_cancel">Cancel</string>
+    <string name="link_copied">Link copied</string>
+    <string name="link_no_handler">No app available to open this link</string>
 </resources>

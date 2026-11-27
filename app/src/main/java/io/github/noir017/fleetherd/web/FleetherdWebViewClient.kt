@@ -1,15 +1,13 @@
 package io.github.noir017.fleetherd.web
 
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
-import android.net.Uri
 import android.webkit.CookieManager
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.browser.customtabs.CustomTabsIntent
+import io.github.noir017.fleetherd.ui.ExternalLinkDialog
 
 class FleetherdWebViewClient(
     private val context: Context,
@@ -30,19 +28,26 @@ class FleetherdWebViewClient(
         val uri = request?.url ?: return false
         val url = uri.toString()
 
-        if (OriginGuard.shouldOpenExternally(
+        return when (
+            OriginGuard.decideNavigation(
                 candidateUrl = url,
+                currentUrl = view?.url,
                 serverUrl = activeServerUrlProvider(),
                 customSsoHosts = ssoHostsProvider(),
                 isRedirect = request.isRedirect,
                 hasGesture = request.hasGesture()
             )
         ) {
-            openExternally(uri)
-            return true
+            OriginGuard.NavigationAction.STAY -> false
+            OriginGuard.NavigationAction.ASK -> {
+                ExternalLinkDialog.show(context, uri)
+                true
+            }
+            OriginGuard.NavigationAction.EXTERNAL -> {
+                ExternalLinkDialog.openInExternalApp(context, uri)
+                true
+            }
         }
-
-        return false
     }
 
     override fun onPageFinished(view: WebView?, url: String?) {
@@ -65,22 +70,6 @@ class FleetherdWebViewClient(
             mainFrameFailed = true
             val desc = error?.description?.toString() ?: "Network error"
             onMainFrameError(desc)
-        }
-    }
-
-    private fun openExternally(uri: Uri) {
-        try {
-            if (uri.scheme == "http" || uri.scheme == "https") {
-                CustomTabsIntent.Builder().build().launchUrl(context, uri)
-                return
-            }
-        } catch (_: Exception) {
-            // Fall back to default system handler.
-        }
-        try {
-            context.startActivity(Intent(Intent.ACTION_VIEW, uri))
-        } catch (_: Exception) {
-            // No handler available on device.
         }
     }
 }

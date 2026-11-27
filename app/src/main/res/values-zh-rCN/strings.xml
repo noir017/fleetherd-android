@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_servers_short">服务器</string>
+    <string name="shortcut_servers_long">管理服务器</string>
+    <string name="error_title">无法连接服务器</string>
+    <string name="error_retry">重试</string>
+    <string name="error_switch_server">切换服务器</string>
+    <string name="back_press_again_to_exit">再按一次返回退出</string>
+    <string name="server_dialog_title">服务器</string>
+    <string name="server_name_hint">名称（如 Home）</string>
+    <string name="server_sso_hint">允许的 SSO 域名（可选，逗号分隔）</string>
+    <string name="server_save_connect">保存并连接</string>
+    <string name="server_cancel">取消</string>
+    <string name="server_delete">删除</string>
+    <string name="server_url_invalid">请输入有效的 http:// 或 https:// 地址</string>
+    <string name="download_started">正在下载 %1$s</string>
+    <string name="download_failed">下载失败</string>
+    <string name="mic_permission_denied">语音录制需要麦克风权限</string>
+    <string name="link_open_in_browser">在浏览器中打开</string>
+    <string name="link_copy">复制链接</string>
+    <string name="link_cancel">取消</string>
+    <string name="link_copied">已复制</string>
+    <string name="link_no_handler">没有可打开此链接的应用</string>
+</resources>

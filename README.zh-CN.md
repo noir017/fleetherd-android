@@ -17,7 +17,7 @@
   - 连接失败页面的 **Switch Server** 按钮
   - 前端调用 `window.FleetherdNative.openServerManager()`
 - **分层返回手势**：优先关闭页面内的弹窗/菜单/抽屉（调用 `window.__fleetherdBack()` 或自动派发 `Escape`），再回退历史记录，最后双击退出。
-- **认证与 SSO 兼容**：持久化 `CookieManager`，同域及允许的 SSO 域名（默认放行常见 IdP，也可按实例自定义）保留在应用内完成登录，聊天气泡里的外部链接自动走 Custom Tabs 打开。
+- **认证与外链处理**：持久化 `CookieManager`，同域页面及 SSO 登录流程（默认放行常见 IdP，也可按实例自定义）保留在应用内完成；在网关页面点击外部链接时弹出原生对话框，可选择在外部浏览器/应用打开或复制完整链接。
 - **上传、下载与语音**：支持多选文件/图片上传、带会话 Cookie 的系统 `DownloadManager` 附件下载、以及录音按钮的麦克风权限动态申请。
 
 ## JS Bridge 协议

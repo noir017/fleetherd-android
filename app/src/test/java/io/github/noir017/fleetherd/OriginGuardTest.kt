@@ -1,6 +1,7 @@
 package io.github.noir017.fleetherd
 
 import io.github.noir017.fleetherd.web.OriginGuard
+import io.github.noir017.fleetherd.web.OriginGuard.NavigationAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -42,10 +43,13 @@ class OriginGuardTest {
     @Test
     fun keepsRedirectsAndAutoNavigationsInApp() {
         val server = "https://fleetherd.example.com"
+        val chatPage = "https://fleetherd.example.com/?t=topic-1"
         // Server redirect during SSO callback must never kick out to external browser
-        assertFalse(
-            OriginGuard.shouldOpenExternally(
+        assertEquals(
+            NavigationAction.STAY,
+            OriginGuard.decideNavigation(
                 candidateUrl = "https://idp.example.net/callback",
+                currentUrl = chatPage,
                 serverUrl = server,
                 customSsoHosts = emptyList(),
                 isRedirect = true,
@@ -53,29 +57,154 @@ class OriginGuardTest {
             )
         )
         // Non-gesture automatic JS redirect stays in app
-        assertFalse(
-            OriginGuard.shouldOpenExternally(
+        assertEquals(
+            NavigationAction.STAY,
+            OriginGuard.decideNavigation(
                 candidateUrl = "https://idp.example.net/done",
+                currentUrl = chatPage,
                 serverUrl = server,
                 customSsoHosts = emptyList(),
                 isRedirect = false,
                 hasGesture = false
             )
         )
-        // Explicit user tap on external link opens externally
-        assertTrue(
-            OriginGuard.shouldOpenExternally(
-                candidateUrl = "https://docs.example.org/guide",
+    }
+
+    @Test
+    fun promptsForOffOriginLinksTappedFromGatewayPage() {
+        val server = "https://fleetherd.example.com"
+        val chatPage = "https://fleetherd.example.com/?t=topic-1"
+
+        // Tapping a github.com link in chat must prompt instead of navigating the WebView away
+        assertEquals(
+            NavigationAction.ASK,
+            OriginGuard.decideNavigation(
+                candidateUrl = "https://github.com/example/repo",
+                currentUrl = chatPage,
                 serverUrl = server,
                 customSsoHosts = emptyList(),
                 isRedirect = false,
                 hasGesture = true
             )
         )
-        // Explicit user tap on CF Access / GitHub SSO stays in app
-        assertFalse(
-            OriginGuard.shouldOpenExternally(
+        // Regular external http/https link prompts
+        assertEquals(
+            NavigationAction.ASK,
+            OriginGuard.decideNavigation(
+                candidateUrl = "https://docs.example.org/guide",
+                currentUrl = chatPage,
+                serverUrl = server,
+                customSsoHosts = emptyList(),
+                isRedirect = false,
+                hasGesture = true
+            )
+        )
+        // Non-HTTP schemes like mailto: and tel: tapped from gateway page also prompt
+        assertEquals(
+            NavigationAction.ASK,
+            OriginGuard.decideNavigation(
+                candidateUrl = "mailto:user@example.com",
+                currentUrl = chatPage,
+                serverUrl = server,
+                customSsoHosts = emptyList(),
+                isRedirect = false,
+                hasGesture = true
+            )
+        )
+        assertEquals(
+            NavigationAction.ASK,
+            OriginGuard.decideNavigation(
+                candidateUrl = "tel:+15551234567",
+                currentUrl = chatPage,
+                serverUrl = server,
+                customSsoHosts = emptyList(),
+                isRedirect = false,
+                hasGesture = true
+            )
+        )
+        // Same-origin links (topic switches, file downloads) stay in app
+        assertEquals(
+            NavigationAction.STAY,
+            OriginGuard.decideNavigation(
+                candidateUrl = "https://fleetherd.example.com/?t=topic-2",
+                currentUrl = chatPage,
+                serverUrl = server,
+                customSsoHosts = emptyList(),
+                isRedirect = false,
+                hasGesture = true
+            )
+        )
+        assertEquals(
+            NavigationAction.STAY,
+            OriginGuard.decideNavigation(
+                candidateUrl = "https://fleetherd.example.com/api/files/sample.txt",
+                currentUrl = chatPage,
+                serverUrl = server,
+                customSsoHosts = emptyList(),
+                isRedirect = false,
+                hasGesture = true
+            )
+        )
+    }
+
+    @Test
+    fun keepsSsoFlowBehaviorWhenAlreadyOnOffOriginPage() {
+        val server = "https://fleetherd.example.com"
+        val ssoPage = "https://team.cloudflareaccess.com/cdn-cgi/access/login"
+
+        // Inside an SSO login page, tapping GitHub SSO stays in WebView
+        assertEquals(
+            NavigationAction.STAY,
+            OriginGuard.decideNavigation(
+                candidateUrl = "https://github.com/login/oauth/authorize",
+                currentUrl = ssoPage,
+                serverUrl = server,
+                customSsoHosts = emptyList(),
+                isRedirect = false,
+                hasGesture = true
+            )
+        )
+        // Inside an SSO login page, tapping another default or custom SSO host stays in WebView
+        assertEquals(
+            NavigationAction.STAY,
+            OriginGuard.decideNavigation(
                 candidateUrl = "https://team.cloudflareaccess.com/cdn-cgi/access/login",
+                currentUrl = ssoPage,
+                serverUrl = server,
+                customSsoHosts = emptyList(),
+                isRedirect = false,
+                hasGesture = true
+            )
+        )
+        assertEquals(
+            NavigationAction.STAY,
+            OriginGuard.decideNavigation(
+                candidateUrl = "https://id.sso.example.org/auth",
+                currentUrl = ssoPage,
+                serverUrl = server,
+                customSsoHosts = listOf("sso.example.org"),
+                isRedirect = false,
+                hasGesture = true
+            )
+        )
+        // Inside an SSO login page, tapping a non-SSO external link opens externally
+        assertEquals(
+            NavigationAction.EXTERNAL,
+            OriginGuard.decideNavigation(
+                candidateUrl = "https://docs.example.org/privacy",
+                currentUrl = ssoPage,
+                serverUrl = server,
+                customSsoHosts = emptyList(),
+                isRedirect = false,
+                hasGesture = true
+            )
+        )
+        // Returning to same-origin from SSO stays in WebView
+        assertEquals(
+            NavigationAction.STAY,
+            OriginGuard.decideNavigation(
+                candidateUrl = "https://fleetherd.example.com/",
+                currentUrl = ssoPage,
                 serverUrl = server,
                 customSsoHosts = emptyList(),
                 isRedirect = false,

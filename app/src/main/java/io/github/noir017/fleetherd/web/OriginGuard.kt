@@ -6,6 +6,12 @@ import java.net.URI
  * URL normalization, same-origin checks for JS bridge security, and in-app vs external routing.
  */
 object OriginGuard {
+    enum class NavigationAction {
+        STAY,
+        ASK,
+        EXTERNAL,
+    }
+
     private val DEFAULT_SSO_SUFFIXES = listOf(
         "cloudflareaccess.com",
         "cloudflare.com",
@@ -69,7 +75,6 @@ object OriginGuard {
 
     /**
      * Returns true if the URL should stay inside the WebView (same origin or an allowed SSO IdP).
-     * Everything else is handed off to Custom Tabs / external browser when triggered by user click.
      */
     fun shouldStayInApp(
         candidateUrl: String?,
@@ -98,18 +103,36 @@ object OriginGuard {
     }
 
     /**
-     * Only hand off to an external browser when the user explicitly tapped a link (not on
-     * server 302 redirects or automatic SSO callback navigations).
+     * Decides how to handle a WebView navigation request:
+     * - Redirects and non-gesture navigations always stay in WebView.
+     * - Same-origin navigations (topics, downloads, etc.) always stay in WebView.
+     * - User-initiated non-redirect clicks from a same-origin page to any off-origin URL
+     *   (including SSO domains like github.com and non-HTTP schemes like mailto:/tel:)
+     *   prompt the user with a chooser dialog so chat links never navigate away from the app.
+     * - When already on an off-origin page (e.g. an SSO login flow), user clicks follow the
+     *   SSO allowlist: allowed SSO hosts stay in WebView, everything else opens externally.
      */
-    fun shouldOpenExternally(
+    fun decideNavigation(
         candidateUrl: String?,
+        currentUrl: String?,
         serverUrl: String?,
-        customSsoHosts: List<String>,
+        customSsoHosts: List<String> = emptyList(),
         isRedirect: Boolean,
         hasGesture: Boolean
-    ): Boolean {
-        if (isRedirect || !hasGesture) return false
-        return !shouldStayInApp(candidateUrl, serverUrl, customSsoHosts)
+    ): NavigationAction {
+        if (isRedirect || !hasGesture) return NavigationAction.STAY
+        if (candidateUrl.isNullOrBlank()) return NavigationAction.STAY
+        if (isSameOrigin(candidateUrl, serverUrl)) return NavigationAction.STAY
+
+        if (isSameOrigin(currentUrl, serverUrl)) {
+            return NavigationAction.ASK
+        }
+
+        return if (shouldStayInApp(candidateUrl, serverUrl, customSsoHosts)) {
+            NavigationAction.STAY
+        } else {
+            NavigationAction.EXTERNAL
+        }
     }
 
     private fun effectivePort(scheme: String, port: Int): Int {
