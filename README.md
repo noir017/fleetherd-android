@@ -17,7 +17,7 @@ Instead of rewriting the WebUI in native widgets, this app wraps Android's Syste
   - The **Switch Server** button on the error screen
   - Calling `window.FleetherdNative.openServerManager()` from the WebUI
 - **Layered back gesture**: Dismisses open modals, menus, and drawers first (via `window.__fleetherdBack()` or `Escape` fallback), then WebView history, then double-back to exit.
-- **SSO & Cookie persistence**: Keeps same-origin and allowed SSO hosts (e.g. Cloudflare Access, Google, Microsoft, or custom hosts) inside the app; opens external links in Custom Tabs.
+- **SSO & external links**: Keeps same-origin pages and SSO login flows (e.g. Cloudflare Access, Google, Microsoft, or custom hosts) inside the app with persistent cookies. Tapping an external link from the fleetherd WebUI prompts a native chooser dialog to open it in an external browser/app or copy the URL.
 - **Attachments & voice**: Supports file upload chooser, authenticated downloads via `DownloadManager` (passing active session cookies), and microphone permission requests for voice recording.
 
 ## JS Bridge Contract
